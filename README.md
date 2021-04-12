@@ -1,3 +1,7 @@
+# THIS IS A FORK OF THIS REPOSITORY:
+
+https://github.com/kanosawa/anime_face_landmark_detection
+.
 # Anime face landmark detection by deep cascaded regression
 This is an implementation of deep cascaded regression for anime face landmark detection on Pytorch.
 
