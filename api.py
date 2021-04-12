@@ -5,14 +5,11 @@ from PIL import Image
 from CFA import CFA
 
 from pathlib import Path
-default_model_path = str(Path('model/checkpoint_landmark_191116.pth.tar').resolve())
+default_checkpoint_path = str(Path(__file__).resolve().parent / 'model/checkpoint_landmark_191116.pth.tar')
 
 class LandmarkDetector():
 
-    def __init__(self, model=default_model_path):
-        checkpoint_name = 'checkpoint_landmark_191116.pth.tar'
-        checkpoint_path = str((Path(__file__).parent / checkpoint_name).resolve())
-
+    def __init__(self, checkpoint_path=default_checkpoint_path):
         # params
         self._num_landmarks = 24
         self._landmark_detector = CFA(output_channel_num=self._num_landmarks + 1, checkpoint_name=checkpoint_path).cuda()
@@ -58,7 +55,7 @@ class LandmarkDetector():
                 image: numpy rgb array, dtype=np.uint8
                 facebox: where the face is located in the image, tuple (x,y,w,h), dtype=np.int32
         """
-
+        img = image.copy()
 
         x_, y_, w_, h_ = facebox
 
@@ -79,7 +76,7 @@ class LandmarkDetector():
         # facial_img = cv2.resize(cropped_img, (img_width, img_width), interpolation = cv2.INTER_CUBIC)
 
         # normalize and convert to tensors
-        process_img = self._transformer(facial_img)
+        process_img = self._transformer(facial_img.copy())
         process_img = process_img.unsqueeze(0).cuda()
 
         # get landmark classification heatmap
@@ -129,9 +126,6 @@ class LandmarkDetector():
         return self._process_landmarks(image, named_landmarks)
 
     def _process_landmarks(self, image, landmarks):
-        left_eye_color = self._calc_eye_color(image, landmarks['left-eye-center-pos'])
-        right_eye_color = self._calc_eye_color(image, landmarks['right-eye-center-pos'])
-        hair_color = self._calc_hair_color(image, landmarks['face-box'], landmarks['face-left-pos'], landmarks['face-right-pos'])
         eye_center_pos = tuple(np.average([landmarks['left-eye-center-pos'], landmarks['right-eye-center-pos']], axis=0).astype(np.int32))
 
         mouth_center_pos = tuple(np.average([
@@ -144,7 +138,6 @@ class LandmarkDetector():
         landmarks.update({
             'eye-center-pos': eye_center_pos,
             'mouth-center-pos': mouth_center_pos,
-            'hair-color': hair_color
         })
 
         return landmarks
